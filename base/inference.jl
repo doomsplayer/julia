@@ -200,17 +200,11 @@ function limit_type_depth(t::ANY, d::Int, cov::Bool, vars)
         if d > MAX_TYPE_DEPTH
             R = Any
         else
-            R = limit_type_depth(t.types, d, cov, vars)
-            if isa(R,TypeVar)
-                R = Union(R.ub...)
-                inexact = true
-            else
-                R = Union(R...)
-            end
+            R = Union(map(x->limit_type_depth(x, d+1, cov, vars), t.types)...)
         end
     elseif isa(t,DataType)
         P = t.parameters
-        P === () && return t
+        length(P) == 0 && return t
         if d > MAX_TYPE_DEPTH
             R = t.name.primary
         else
@@ -219,7 +213,11 @@ function limit_type_depth(t::ANY, d::Int, cov::Bool, vars)
                 R = t.name.primary
                 inexact = true
             else
-                R = t.name.primary{Q...}
+                if t.va
+                    R = Tuple{Q..., ...}
+                else
+                    R = t.name.primary{Q...}
+                end
             end
         end
     else
@@ -280,7 +278,7 @@ const getfield_tfunc = function (A, s0, name)
         for i=1:nfields(s)
             if is(snames[i],fld)
                 R = s.types[i]
-                if s.parameters === ()
+                if length(s.parameters) == 0
                     return R
                 else
                     return limit_type_depth(R, 0, true,
@@ -478,13 +476,14 @@ function builtin_tfunction(f::ANY, args::ANY, argtype::ANY)
         return Any
     end
     tf = tf::Tuple{Real, Real, Function}
-    if !(tf[1] <= length(argtypes) <= tf[2])
+    if isva
+        # only some t-funcs can handle varargs  (TODO)
+        #if !is(f, apply_type)
+        return Any
+        #end
+    elseif !(tf[1] <= length(argtypes) <= tf[2])
         # wrong # of args
         return Bottom
-    end
-    if isva && !is(f,apply_type)
-        # only some t-funcs can handle varargs
-        return Any
     end
     if is(f,typeassert) || is(f,getfield) || is(f,apply_type) || is(f,fieldtype)
         # TODO: case of apply(), where we do not have the args

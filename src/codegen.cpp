@@ -1452,11 +1452,9 @@ static Value *make_gcroot(Value *v, jl_codectx_t *ctx, jl_sym_t *var)
                                      ConstantInt::get(T_size,slot));
     builder.CreateStore(v, froot);
 #ifdef LLVM36
-    if (var != NULL)
-    {
+    if (var != NULL) {
         std::map<jl_sym_t *, jl_varinfo_t>::iterator it = ctx->vars.find(var);
-        if (it != ctx->vars.end() && ((llvm::MDNode*)it->second.dinfo) != NULL)
-        {
+        if (it != ctx->vars.end() && ((llvm::MDNode*)it->second.dinfo) != NULL) {
             if (ctx->debug_enabled) {
                 SmallVector<int64_t, 9> addr;
                 addr.push_back(llvm::dwarf::DW_OP_plus);
@@ -3739,6 +3737,8 @@ static Function *emit_function(jl_lambda_info_t *lam)
         varinfo.isSA = (jl_vinfo_sa(vi)!=0);
         varinfo.usedUndef = (jl_vinfo_usedundef(vi)!=0) || (!varinfo.isArgument && !lam->inferred);
         varinfo.declType = jl_cellref(vi,1);
+        if (!jl_is_type(varinfo.declType))
+            varinfo.declType = (jl_value_t*)jl_any_type;
     }
     vinfos = jl_lam_capt(ast);
     vinfoslen = jl_array_dim0(vinfos);
@@ -3756,6 +3756,8 @@ static Function *emit_function(jl_lambda_info_t *lam)
         varinfo.used = true;
         varinfo.usedUndef = (jl_vinfo_usedundef(vi)!=0) || !lam->inferred;
         varinfo.declType = jl_cellref(vi,1);
+        if (!jl_is_type(varinfo.declType))
+            varinfo.declType = (jl_value_t*)jl_any_type;
     }
 
     // step 3. some variable analysis

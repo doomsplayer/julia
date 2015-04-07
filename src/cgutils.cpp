@@ -1097,6 +1097,9 @@ static jl_value_t *expr_type(jl_value_t *e, jl_codectx_t *ctx)
                 }
             }
             else {
+                std::map<jl_sym_t*,jl_varinfo_t>::iterator it = ctx->vars.find((jl_sym_t*)e);
+                if (it != ctx->vars.end())
+                    return (*it).second.declType;
                 return (jl_value_t*)jl_any_type;
             }
         }
