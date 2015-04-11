@@ -347,7 +347,7 @@ let mta = MersenneTwister(42), mtb = MersenneTwister(42)
 
     @test randperm(mta,10) == randperm(mtb,10)
     @test randperm(0) == []
-    try 
+    try
         randperm(-1)
     catch e
         @test e == BoundsError()
