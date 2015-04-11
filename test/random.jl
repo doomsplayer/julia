@@ -350,7 +350,7 @@ let mta = MersenneTwister(42), mtb = MersenneTwister(42)
     try
         randperm(-1)
     catch e
-        @test e == BoundsError()
+        @test isa(e, ErrorException) && e.msg == "invalid Array dimensions"
     end
     @test randcycle(mta,10) == randcycle(mtb,10)
 
